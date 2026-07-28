@@ -8,6 +8,21 @@ and an optimized implementation for x86 CPUs supporting the AVX2 instruction set
 Kyber has been selected for standardization in [round 3](https://csrc.nist.gov/Projects/post-quantum-cryptography/round-3-submissions) 
 of the [NIST PQC](https://csrc.nist.gov/projects/post-quantum-cryptography) standardization project.
 
+## Maintenance status
+
+**We no longer actively maintain the software in the sense that we can recommend it for any production use.**
+
+If you are looking for an actively maintained, production-quality C implementation of ML-KEM, 
+we recommend the [mlkem-native](https://github.com/pq-code-package/mlkem-native) software
+that is part of [the PQ Code Package](https://pqca.org/projects/pq-code-package/)
+maintained by [the Post-Quantum Cryptography Alliance](https://pqca.org), 
+a project within [the Linux Foundation](https://www.linuxfoundation.org/).
+
+For an end-to-end formally verified implementation with extensive principled protections
+against microarchitectural attacks written in [the Jasmin programming language](https://github.com/jasmin-lang/jasmin)
+and shipping as AMD64 assembly, 
+we recommend [mlkem-libjade](https://github.com/pq-code-package/mlkem-libjade),
+which is also part of [the PQ Code Package](https://pqca.org/projects/pq-code-package).
 
 ## Build instructions
 
