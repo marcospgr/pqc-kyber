@@ -10,7 +10,7 @@ of the [NIST PQC](https://csrc.nist.gov/projects/post-quantum-cryptography) stan
 
 ## Maintenance status
 
-**We no longer actively maintain the software in the sense that we can recommend it for any production use.**
+**We no longer actively maintain this software, at least not to the extent that would be necessary to recommend it for production use.**
 
 If you are looking for an actively maintained, production-quality C implementation of ML-KEM, 
 we recommend the [mlkem-native](https://github.com/pq-code-package/mlkem-native) software
