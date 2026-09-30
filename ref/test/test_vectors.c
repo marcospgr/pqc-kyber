@@ -6,18 +6,18 @@
 #include <stdio.h>
 #include "../kem.h"
 #include "../randombytes.h"
-#include "../fips202.h"
+#include "../hashing.h"
 
-#define NTESTS 10000
+#define NTESTS 10
 
 
 /* Initital state after absorbing empty string 
  * Permute before squeeze is achieved by setting pos to SHAKE128_RATE */
-static keccak_state rngstate = {{0x1F, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (1ULL << 63), 0, 0, 0, 0}, SHAKE128_RATE};
+static hash_state rngstate;
 
 void randombytes(uint8_t *x,size_t xlen)
 {
-  shake128_squeeze(x, xlen, &rngstate);
+  _shake128_squeeze(x, xlen, &rngstate);
 }
 
 int main(void)
@@ -28,6 +28,8 @@ int main(void)
   uint8_t ct[CRYPTO_CIPHERTEXTBYTES];
   uint8_t key_a[CRYPTO_BYTES];
   uint8_t key_b[CRYPTO_BYTES];
+
+  ChaoticHashInit(&rngstate, 128);
 
   for(i=0;i<NTESTS;i++) {
     // Key-pair generation
@@ -77,3 +79,5 @@ int main(void)
 
   return 0;
 }
+
+
