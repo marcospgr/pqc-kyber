@@ -7,7 +7,7 @@
 #include "hashing.h"
 
 typedef ChaoticHashCtx_t xof_state;
-
+#define XOF_BLOCKBYTES 168
 
 #define hash_h(OUT, IN, INBYTES) _sha3_256(OUT, IN, INBYTES)
 #define hash_g(OUT, IN, INBYTES) _sha3_512(OUT, IN, INBYTES)

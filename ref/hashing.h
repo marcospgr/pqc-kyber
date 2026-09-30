@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "params.h"
-#include "hash_options\chaotic_hash.h"
+#include "../hash_options/chaotic_hash.h"
 
 typedef ChaoticHashCtx_t hash_state;
 

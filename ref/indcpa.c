@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 #include "params.h"
 #include "indcpa.h"
 #include "polyvec.h"
@@ -189,6 +190,7 @@ void gen_matrix(polyvec *a, const uint8_t seed[KYBER_SYMBYTES], int transposed)
   }
 }
 
+
 /*************************************************
 * Name:        indcpa_keypair_derand
 *
@@ -219,10 +221,13 @@ void indcpa_keypair_derand(uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES],
 
   gen_a(a, publicseed);
 
-  for(i=0;i<KYBER_K;i++)
+  for(i=0;i<KYBER_K;i++){
     poly_getnoise_eta1(&skpv.vec[i], noiseseed, nonce++);
-  for(i=0;i<KYBER_K;i++)
+  }
+
+  for(i=0;i<KYBER_K;i++){
     poly_getnoise_eta1(&e.vec[i], noiseseed, nonce++);
+  }
 
   polyvec_ntt(&skpv);
   polyvec_ntt(&e);
