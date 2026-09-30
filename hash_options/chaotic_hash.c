@@ -15,7 +15,7 @@ void ChaoticHashInit (ChaoticHashCtx_t *Ctx, int h_size) {
     Ctx->c_imag = (int32_t)(0.2142 * SCALE_VAL);
     Ctx->h_size = h_size;
 
-    double a = 10.15 + (double)(h_size)/10000.0;
+    double a = 10.45 + (double)(h_size)/10000.0;
     Ctx->alpha = (int64_t)(a * SCALE_VAL);
 }
 
@@ -41,7 +41,7 @@ void ChaoticHashing (ChaoticHashCtx_t *Ctx, uint8_t *output, const uint8_t *data
      * 6 -  the last value obtained for z is saved for use in the next step of the process
      **********************************************************************************************************/
 
-    if(data != NULL && data_len > 0) {
+    if(data != 0 && data_len > 0) {
         size_t iterations = (data_len / 4) + ((data_len % 4) > 0 ? 1 : 0);
 
         for (size_t i = 0; i < iterations; i +=2) {
@@ -49,7 +49,7 @@ void ChaoticHashing (ChaoticHashCtx_t *Ctx, uint8_t *output, const uint8_t *data
 
             for (int j = 0; j < 4; j++) {
                 if (i*4 + j < data_len) {
-                    cd_real = cd_real | ((uint32_t)data[i*4+j] << (8*j));
+                    cd_real |= (uint32_t)data[i*4+j] << (8*j);
                 }
             }
 
@@ -57,22 +57,23 @@ void ChaoticHashing (ChaoticHashCtx_t *Ctx, uint8_t *output, const uint8_t *data
                 cd_imag = 0;
                 for (int k = 0; k < 4; k++) {
                     if ((i+1)*4 + k < data_len) {
-                        cd_imag = cd_imag | ((uint32_t)data[(i+1)*4+k] << (8*k));
+                        cd_imag |= (uint32_t)data[(i+1)*4+k] << (8*k);
                     }
                 }
             }
 
             int64_t norm_cd_real = (int64_t)(cd_real >> 8);
             int64_t norm_cd_imag = (int64_t)(cd_imag >> 8); 
-            //int64_t norm_cd_real = (int64_t)((cd_real >> 8) | 1); -> remove problema do valor totalmente zerado
 
             int64_t temp_z_real = z_real;
             int64_t temp_z_imag = z_imag;
 
             z_real = CFOLD(MUL_FIXED(MUL_FIXED(alpha,alpha),(MUL_FIXED(temp_z_real,temp_z_real)-MUL_FIXED(temp_z_imag,temp_z_imag))) + norm_cd_real);
             z_imag = CFOLD(MUL_FIXED(MUL_FIXED(alpha,alpha),(MUL_FIXED(temp_z_real,temp_z_imag) << 1)) + norm_cd_imag);
+
+            c_real = norm_cd_real;
+            c_imag = norm_cd_imag;
         }    
-    }
 
     /***********************************************************************************************************
      * ITERATION BLOCK 
@@ -85,12 +86,13 @@ void ChaoticHashing (ChaoticHashCtx_t *Ctx, uint8_t *output, const uint8_t *data
      * 5 -  the final value obtained from z will be used in the next step as the system input to extract the hash code
      **********************************************************************************************************/
 
-    for (int l = 0; l <= (Ctx->h_size + 200); l++) {
-        int64_t temp_z_real = z_real;
-        int64_t temp_z_imag = z_imag;
+        for (int l = 0; l < (Ctx->h_size + 200); l++) {
+            int64_t temp_z_real = z_real;
+            int64_t temp_z_imag = z_imag;
 
-        z_real = CFOLD(MUL_FIXED(MUL_FIXED(alpha,alpha),(MUL_FIXED(temp_z_real,temp_z_real)-MUL_FIXED(temp_z_imag,temp_z_imag))) + c_real);
-        z_imag = CFOLD(MUL_FIXED(MUL_FIXED(alpha,alpha),(MUL_FIXED(temp_z_real,temp_z_imag) << 1)) + c_imag);
+            z_real = CFOLD(MUL_FIXED(MUL_FIXED(alpha,alpha),(MUL_FIXED(temp_z_real,temp_z_real)-MUL_FIXED(temp_z_imag,temp_z_imag))) + c_real);
+            z_imag = CFOLD(MUL_FIXED(MUL_FIXED(alpha,alpha),(MUL_FIXED(temp_z_real,temp_z_imag) << 1)) + c_imag);
+        }
     }
 
     /***********************************************************************************************************
@@ -105,9 +107,9 @@ void ChaoticHashing (ChaoticHashCtx_t *Ctx, uint8_t *output, const uint8_t *data
      *      iteration
      **********************************************************************************************************/
 
-    if (output != NULL) {
+    if (output != 0) {
         int L = (Ctx->h_size / 32);
-        for (int m = 0; m <= L; m++) {
+        for (int m = 0; m < L; m++) {
             int64_t temp_z_real = z_real;
             int64_t temp_z_imag = z_imag;
 
@@ -117,11 +119,15 @@ void ChaoticHashing (ChaoticHashCtx_t *Ctx, uint8_t *output, const uint8_t *data
             uint16_t h1 = (uint16_t)((z_real >> 8) & 0xFFFF);
             uint16_t h2 = (uint16_t)((z_imag >> 8) & 0xFFFF);
 
-            output[m*4] = (uint8_t)(h1 >> 8);
-            output[m*4 + 1] = (uint8_t)(h1 >> 8);
+            output[m*4 + 0] = h1 >> 8;
+            output[m*4 + 1] = h1 & 0xFF;
 
-            output[m*4 + 2] = (uint8_t)(h2 >> 8);
-            output[m*4 + 3] = (uint8_t)(h2 >> 8);
+            output[m*4 + 2] = h2 >> 8;
+            output[m*4 + 3] = h2 & 0xFF;
         }
     }
+    Ctx->z_real = z_real;
+    Ctx->z_imag = z_imag;
+    Ctx->c_real = c_real;
+    Ctx->c_imag = c_imag;
 }
