@@ -6,7 +6,7 @@
 #include "params.h"
 #include "hashing.h"
 
-typedef ChaoticHashCtx_t xof_state;
+typedef hash_state xof_state;
 #define XOF_BLOCKBYTES 168
 
 #define hash_h(OUT, IN, INBYTES) _sha3_256(OUT, IN, INBYTES)

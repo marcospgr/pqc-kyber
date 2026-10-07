@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <stddef.h> 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     int64_t z_real;
     int64_t z_imag;
@@ -26,5 +30,9 @@ void ChaoticHashing (ChaoticHashCtx_t *Ctx, uint8_t *output, const uint8_t *data
  * data - ponteiro para o buffer de entrada de dados (1-byte para cada elemento)
  * data_len - tamanho do buffer de entrada de dados (em bytes)
 ****************************************************************************/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //CHAOTIC_HASH_H

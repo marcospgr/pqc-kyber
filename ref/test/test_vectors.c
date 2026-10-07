@@ -29,7 +29,7 @@ int main(void)
   uint8_t key_a[CRYPTO_BYTES];
   uint8_t key_b[CRYPTO_BYTES];
 
-  ChaoticHashInit(&rngstate, 128);
+  hash_state_init(&rngstate, 128);
 
   for(i=0;i<NTESTS;i++) {
     // Key-pair generation
@@ -79,5 +79,4 @@ int main(void)
 
   return 0;
 }
-
 
