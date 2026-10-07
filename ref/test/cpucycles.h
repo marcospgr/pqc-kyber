@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef USE_RDPMC  /* Needs echo 2 > /sys/devices/cpu/rdpmc */
 
 static inline uint64_t cpucycles(void) {
@@ -29,5 +33,9 @@ static inline uint64_t cpucycles(void) {
 #endif
 
 uint64_t cpucycles_overhead(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

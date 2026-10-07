@@ -1,9 +1,23 @@
+#ifndef HASHING_H
+#define HASHING_H
+
 #include <stddef.h>
 #include <stdint.h>
 #include "params.h"
 #include "../hash_options/chaotic_hash.h"
 
-typedef ChaoticHashCtx_t hash_state;
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Adapter state: keep residual XOF bytes outside the mathematical core. */
+typedef struct {
+    ChaoticHashCtx_t ctx;
+    uint8_t pending[4];
+    size_t pending_position;
+} hash_state;
+
+void hash_state_init(hash_state *state, int h_size);
 
 void _sha3_256(uint8_t h[32], const uint8_t *in, size_t inlen);
 /***********************************************************************************************************
@@ -60,3 +74,9 @@ void kyber_shake256_rkprf(uint8_t out[KYBER_SSBYTES], const uint8_t key[KYBER_SY
 * const uint8_t key[KYBER_SYMBYTES]            -> a chave de rejeição secreta z.
 * const uint8_t input[KYBER_CIPHERTEXTBYTES]   -> o texto cifrado (c) recebido pela rede.
 ***********************************************************************************************************/
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* HASHING_H */

@@ -10,6 +10,10 @@
 
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define RNG_SUCCESS      0
 #define RNG_BAD_MAXLEN  -1
 #define RNG_BAD_OUTBUF  -2
@@ -51,5 +55,9 @@ randombytes_init(unsigned char *entropy_input,
 
 int
 randombytes(unsigned char *x, unsigned long long xlen);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* rng_h */

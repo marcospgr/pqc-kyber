@@ -1,19 +1,24 @@
 CC ?= /usr/bin/cc
+PYTHON ?= python3
 CFLAGS += -Wall -Wextra -Wpedantic -Wmissing-prototypes -Wredundant-decls \
   -Wshadow -Wpointer-arith -O3 -fomit-frame-pointer -z noexecstack
 NISTFLAGS += -Wno-unused-result -O3 -fomit-frame-pointer
 RM = /bin/rm
 
 SOURCES = kem.c indcpa.c polyvec.c poly.c ntt.c cbd.c reduce.c verify.c
-SOURCESKECCAK = $(SOURCES) fips202.c symmetric-shake.c
-HEADERS = params.h kem.h indcpa.h polyvec.h poly.h ntt.h cbd.h reduce.c verify.h symmetric.h
-HEADERSKECCAK = $(HEADERS) fips202.h
+SOURCESCHAOTIC = $(SOURCES) hashing.c ../hash_options/chaotic_hash.c
+HEADERS = params.h kem.h indcpa.h polyvec.h poly.h ntt.h cbd.h reduce.h verify.h symmetric.h randombytes.h
+HEADERSCHAOTIC = $(HEADERS) hashing.h ../hash_options/chaotic_hash.h
 
-.PHONY: all speed shared clean
+.PHONY: all test check speed shared nistkat clean
 
 all: test speed shared nistkat
 
 test: \
+  test/test_hashing \
+  test/test_rejection512 \
+  test/test_rejection768 \
+  test/test_rejection1024 \
   test/test_kyber512 \
   test/test_kyber768 \
   test/test_kyber1024 \
@@ -26,11 +31,13 @@ speed: \
   test/test_speed768 \
   test/test_speed1024 \
 
+check: test
+	$(PYTHON) test/run_checks.py
+
 shared: \
   lib/libpqcrystals_kyber512_ref.so \
   lib/libpqcrystals_kyber768_ref.so \
   lib/libpqcrystals_kyber1024_ref.so \
-  lib/libpqcrystals_fips202_ref.so \
 
 nistkat: \
 	nistkat/PQCgenKAT_kem512 \
@@ -38,59 +45,68 @@ nistkat: \
 	nistkat/PQCgenKAT_kem1024 \
 
 
-lib/libpqcrystals_fips202_ref.so: fips202.c fips202.h
+lib/libpqcrystals_kyber512_ref.so: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) randombytes.c
 	mkdir -p lib
-	$(CC) -shared -fPIC $(CFLAGS) fips202.c -o $@
+	$(CC) -shared -fPIC $(CFLAGS) -DKYBER_K=2 $(SOURCESCHAOTIC) randombytes.c -o $@
 
-lib/libpqcrystals_kyber512_ref.so: $(SOURCES) $(HEADERS) symmetric-shake.c
+lib/libpqcrystals_kyber768_ref.so: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) randombytes.c
 	mkdir -p lib
-	$(CC) -shared -fPIC $(CFLAGS) -DKYBER_K=2 $(SOURCES) symmetric-shake.c -o $@
+	$(CC) -shared -fPIC $(CFLAGS) -DKYBER_K=3 $(SOURCESCHAOTIC) randombytes.c -o $@
 
-lib/libpqcrystals_kyber768_ref.so: $(SOURCES) $(HEADERS) symmetric-shake.c
+lib/libpqcrystals_kyber1024_ref.so: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) randombytes.c
 	mkdir -p lib
-	$(CC) -shared -fPIC $(CFLAGS) -DKYBER_K=3 $(SOURCES) symmetric-shake.c -o $@
+	$(CC) -shared -fPIC $(CFLAGS) -DKYBER_K=4 $(SOURCESCHAOTIC) randombytes.c -o $@
 
-lib/libpqcrystals_kyber1024_ref.so: $(SOURCES) $(HEADERS) symmetric-shake.c
-	mkdir -p lib
-	$(CC) -shared -fPIC $(CFLAGS) -DKYBER_K=4 $(SOURCES) symmetric-shake.c -o $@
+test/test_hashing: hashing.c ../hash_options/chaotic_hash.c $(HEADERSCHAOTIC) test/test_hashing.c
+	$(CC) $(CFLAGS) hashing.c ../hash_options/chaotic_hash.c test/test_hashing.c -o $@
 
-test/test_kyber512: $(SOURCESKECCAK) $(HEADERSKECCAK) test/test_kyber.c randombytes.c
-	$(CC) $(CFLAGS) -DKYBER_K=2 $(SOURCESKECCAK) randombytes.c test/test_kyber.c -o $@
+test/test_rejection512: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) test/test_rejection.c randombytes.c
+	$(CC) $(CFLAGS) -DKYBER_K=2 $(SOURCESCHAOTIC) randombytes.c test/test_rejection.c -o $@
 
-test/test_kyber768: $(SOURCESKECCAK) $(HEADERSKECCAK) test/test_kyber.c randombytes.c
-	$(CC) $(CFLAGS) -DKYBER_K=3 $(SOURCESKECCAK) randombytes.c test/test_kyber.c -o $@
+test/test_rejection768: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) test/test_rejection.c randombytes.c
+	$(CC) $(CFLAGS) -DKYBER_K=3 $(SOURCESCHAOTIC) randombytes.c test/test_rejection.c -o $@
 
-test/test_kyber1024: $(SOURCESKECCAK) $(HEADERSKECCAK) test/test_kyber.c randombytes.c
-	$(CC) $(CFLAGS) -DKYBER_K=4 $(SOURCESKECCAK) randombytes.c test/test_kyber.c -o $@
+test/test_rejection1024: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) test/test_rejection.c randombytes.c
+	$(CC) $(CFLAGS) -DKYBER_K=4 $(SOURCESCHAOTIC) randombytes.c test/test_rejection.c -o $@
 
-test/test_vectors512: $(SOURCESKECCAK) $(HEADERSKECCAK) test/test_vectors.c
-	$(CC) $(CFLAGS) -DKYBER_K=2 $(SOURCESKECCAK) test/test_vectors.c -o $@
+test/test_kyber512: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) test/test_kyber.c randombytes.c
+	$(CC) $(CFLAGS) -DKYBER_K=2 $(SOURCESCHAOTIC) randombytes.c test/test_kyber.c -o $@
 
-test/test_vectors768: $(SOURCESKECCAK) $(HEADERSKECCAK) test/test_vectors.c
-	$(CC) $(CFLAGS) -DKYBER_K=3 $(SOURCESKECCAK) test/test_vectors.c -o $@
+test/test_kyber768: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) test/test_kyber.c randombytes.c
+	$(CC) $(CFLAGS) -DKYBER_K=3 $(SOURCESCHAOTIC) randombytes.c test/test_kyber.c -o $@
 
-test/test_vectors1024: $(SOURCESKECCAK) $(HEADERSKECCAK) test/test_vectors.c
-	$(CC) $(CFLAGS) -DKYBER_K=4 $(SOURCESKECCAK) test/test_vectors.c -o $@
+test/test_kyber1024: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) test/test_kyber.c randombytes.c
+	$(CC) $(CFLAGS) -DKYBER_K=4 $(SOURCESCHAOTIC) randombytes.c test/test_kyber.c -o $@
 
-test/test_speed512: $(SOURCESKECCAK) $(HEADERSKECCAK) test/cpucycles.h test/cpucycles.c test/speed_print.h test/speed_print.c test/test_speed.c randombytes.c
-	$(CC) $(CFLAGS) -DKYBER_K=2 $(SOURCESKECCAK) randombytes.c test/cpucycles.c test/speed_print.c test/test_speed.c -o $@
+test/test_vectors512: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) test/test_vectors.c
+	$(CC) $(CFLAGS) -DKYBER_K=2 $(SOURCESCHAOTIC) test/test_vectors.c -o $@
 
-test/test_speed768: $(SOURCESKECCAK) $(HEADERSKECCAK) test/cpucycles.h test/cpucycles.c test/speed_print.h test/speed_print.c test/test_speed.c randombytes.c
-	$(CC) $(CFLAGS) -DKYBER_K=3 $(SOURCESKECCAK) randombytes.c test/cpucycles.c test/speed_print.c test/test_speed.c -o $@
+test/test_vectors768: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) test/test_vectors.c
+	$(CC) $(CFLAGS) -DKYBER_K=3 $(SOURCESCHAOTIC) test/test_vectors.c -o $@
 
-test/test_speed1024: $(SOURCESKECCAK) $(HEADERSKECCAK) test/cpucycles.h test/cpucycles.c test/speed_print.h test/speed_print.c test/test_speed.c randombytes.c
-	$(CC) $(CFLAGS) -DKYBER_K=4 $(SOURCESKECCAK) randombytes.c test/cpucycles.c test/speed_print.c test/test_speed.c -o $@
+test/test_vectors1024: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) test/test_vectors.c
+	$(CC) $(CFLAGS) -DKYBER_K=4 $(SOURCESCHAOTIC) test/test_vectors.c -o $@
 
-nistkat/PQCgenKAT_kem512: $(SOURCESKECCAK) $(HEADERSKECCAK) nistkat/PQCgenKAT_kem.c nistkat/rng.c nistkat/rng.h
-	$(CC) $(NISTFLAGS) -DKYBER_K=2 -o $@ $(SOURCESKECCAK) nistkat/rng.c nistkat/PQCgenKAT_kem.c $(LDFLAGS) -lcrypto
+test/test_speed512: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) test/cpucycles.h test/cpucycles.c test/speed_print.h test/speed_print.c test/test_speed.c randombytes.c
+	$(CC) $(CFLAGS) -DKYBER_K=2 $(SOURCESCHAOTIC) randombytes.c test/cpucycles.c test/speed_print.c test/test_speed.c -o $@
 
-nistkat/PQCgenKAT_kem768: $(SOURCESKECCAK) $(HEADERSKECCAK) nistkat/PQCgenKAT_kem.c nistkat/rng.c nistkat/rng.h
-	$(CC) $(NISTFLAGS) -DKYBER_K=3 -o $@ $(SOURCESKECCAK) nistkat/rng.c nistkat/PQCgenKAT_kem.c $(LDFLAGS) -lcrypto
+test/test_speed768: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) test/cpucycles.h test/cpucycles.c test/speed_print.h test/speed_print.c test/test_speed.c randombytes.c
+	$(CC) $(CFLAGS) -DKYBER_K=3 $(SOURCESCHAOTIC) randombytes.c test/cpucycles.c test/speed_print.c test/test_speed.c -o $@
 
-nistkat/PQCgenKAT_kem1024: $(SOURCESKECCAK) $(HEADERSKECCAK) nistkat/PQCgenKAT_kem.c nistkat/rng.c nistkat/rng.h
-	$(CC) $(NISTFLAGS) -DKYBER_K=4 -o $@ $(SOURCESKECCAK) nistkat/rng.c nistkat/PQCgenKAT_kem.c $(LDFLAGS) -lcrypto
+test/test_speed1024: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) test/cpucycles.h test/cpucycles.c test/speed_print.h test/speed_print.c test/test_speed.c randombytes.c
+	$(CC) $(CFLAGS) -DKYBER_K=4 $(SOURCESCHAOTIC) randombytes.c test/cpucycles.c test/speed_print.c test/test_speed.c -o $@
+
+nistkat/PQCgenKAT_kem512: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) nistkat/PQCgenKAT_kem.c nistkat/rng.c nistkat/rng.h
+	$(CC) $(NISTFLAGS) -DKYBER_K=2 -o $@ $(SOURCESCHAOTIC) nistkat/rng.c nistkat/PQCgenKAT_kem.c $(LDFLAGS) -lcrypto
+
+nistkat/PQCgenKAT_kem768: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) nistkat/PQCgenKAT_kem.c nistkat/rng.c nistkat/rng.h
+	$(CC) $(NISTFLAGS) -DKYBER_K=3 -o $@ $(SOURCESCHAOTIC) nistkat/rng.c nistkat/PQCgenKAT_kem.c $(LDFLAGS) -lcrypto
+
+nistkat/PQCgenKAT_kem1024: $(SOURCESCHAOTIC) $(HEADERSCHAOTIC) nistkat/PQCgenKAT_kem.c nistkat/rng.c nistkat/rng.h
+	$(CC) $(NISTFLAGS) -DKYBER_K=4 -o $@ $(SOURCESCHAOTIC) nistkat/rng.c nistkat/PQCgenKAT_kem.c $(LDFLAGS) -lcrypto
 
 clean:
+	-$(RM) -f test/test_hashing test/test_rejection512 test/test_rejection768 test/test_rejection1024
 	-$(RM) -f *.gcno *.gcda *.lcov *.o *.so
 	-$(RM) -f test/test_kyber512
 	-$(RM) -f test/test_kyber768
@@ -107,4 +123,3 @@ clean:
 	-$(RM) -f nistkat/*.req
 	-$(RM) -f nistkat/*.rsp
 	-$(RM) -rf lib/
-

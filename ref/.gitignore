@@ -1,5 +1,9 @@
 *.so
 *.o
+test/test_hashing
+test/test_rejection512
+test/test_rejection768
+test/test_rejection1024
 test/test_kyber1024
 test/test_kyber512
 test/test_kyber768
